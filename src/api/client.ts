@@ -4,6 +4,7 @@
  * It talks to the existing Cloudflare Pages Functions API:
  *   GET /api/facets        -> filter options (subject / author / language + counts)
  *   GET /api/browse        -> faceted, paginated list of works
+ *                              query: q, subject, author, language, type, offset, limit
  *   GET /api/work/:slug    -> one work, with its full R2 URL and tags
  *
  * The normalise* functions below accept several plausible field names so the app
@@ -21,7 +22,7 @@ const R2_BASE = (process.env.EXPO_PUBLIC_R2_BASE ?? '').replace(/\/+$/, '');
 export type FacetType = 'subject' | 'author' | 'language';
 export const FACET_TYPES: FacetType[] = ['subject', 'author', 'language'];
 
-export type FacetOption = { type: FacetType; value: string; count: number };
+export type FacetOption = { type: FacetType; value: string; slug: string; count: number };
 export type Facets = Record<FacetType, FacetOption[]>;
 
 export type WorkKind = 'pdf' | 'audio';
@@ -34,22 +35,33 @@ export type Work = {
   url?: string;
   thumbnail?: string;
   sizeBytes?: number;
-  facets: { type: FacetType; value: string }[];
+  facets: { type: FacetType; value: string; slug?: string }[];
 };
 
 export type BrowsePage = {
   items: Work[];
-  page: number;
+  offset: number;
   hasMore: boolean;
   total?: number;
 };
 
+/** Facet filters are slugs from /api/facets, not the display labels. */
 export type BrowseFilters = {
   subject?: string;
   author?: string;
   language?: string;
   kind?: WorkKind;
+  q?: string;
 };
+
+export function isFacetType(value: unknown): value is FacetType {
+  return value === 'subject' || value === 'author' || value === 'language';
+}
+
+export function labelForFacet(facets: Facets | undefined, type: FacetType, slug?: string) {
+  if (!slug) return undefined;
+  return facets?.[type].find((option) => option.slug === slug)?.value ?? slug;
+}
 
 export class ApiError extends Error {
   status?: number;
@@ -127,15 +139,39 @@ function normaliseFacetType(value?: string): FacetType | undefined {
   return undefined;
 }
 
-function normaliseTags(raw: any): { type: FacetType; value: string }[] {
+function pushFacet(
+  tags: { type: FacetType; value: string; slug?: string }[],
+  type: FacetType,
+  entry: any
+) {
+  const value =
+    typeof entry === 'string' ? entry : pickString(entry, ['value', 'name', 'label', 'term', 'facet_value']);
+  if (!value) return;
+  const slug =
+    typeof entry === 'string' ? undefined : pickString(entry, ['slug', 'id', 'key']);
+  tags.push({ type, value, slug });
+}
+
+function normaliseTags(raw: any): { type: FacetType; value: string; slug?: string }[] {
+  const tags: { type: FacetType; value: string; slug?: string }[] = [];
   const source = raw?.facets ?? raw?.tags ?? raw?.terms;
-  if (!Array.isArray(source)) return [];
-  const tags: { type: FacetType; value: string }[] = [];
+
+  // Shape A: { subject: [...], author: [...], language: [...] }
+  if (source && !Array.isArray(source) && typeof source === 'object') {
+    for (const type of FACET_TYPES) {
+      const bucket = source[type];
+      if (!Array.isArray(bucket)) continue;
+      for (const entry of bucket) pushFacet(tags, type, entry);
+    }
+    return tags;
+  }
+
+  // Shape B: a flat array of typed facets
+  if (!Array.isArray(source)) return tags;
   for (const entry of source) {
-    if (typeof entry === 'string') continue; // untyped tag, nothing useful to show
+    if (typeof entry === 'string') continue;
     const type = normaliseFacetType(pickString(entry, ['type', 'facet_type', 'facetType']));
-    const value = pickString(entry, ['value', 'name', 'label', 'term', 'facet_value']);
-    if (type && value) tags.push({ type, value });
+    if (type) pushFacet(tags, type, entry);
   }
   return tags;
 }
@@ -174,7 +210,16 @@ function normaliseFacets(payload: any): Facets {
         const value =
           typeof entry === 'string' ? entry : pickString(entry, ['value', 'name', 'label', 'term']);
         if (!value) continue;
-        result[type].push({ type, value, count: pickNumber(entry, ['count', 'total', 'n']) ?? 0 });
+        const slug =
+          typeof entry === 'string'
+            ? entry
+            : (pickString(entry, ['slug', 'id', 'key']) ?? value);
+        result[type].push({
+          type,
+          value,
+          slug,
+          count: pickNumber(entry, ['count', 'total', 'n']) ?? 0,
+        });
       }
     }
   }
@@ -186,8 +231,14 @@ function normaliseFacets(payload: any): Facets {
       const type = normaliseFacetType(pickString(entry, ['type', 'facet_type', 'facetType']));
       const value = pickString(entry, ['value', 'name', 'label', 'term']);
       if (!type || !value) continue;
-      if (result[type].some((option) => option.value === value)) continue;
-      result[type].push({ type, value, count: pickNumber(entry, ['count', 'total', 'n']) ?? 0 });
+      const slug = pickString(entry, ['slug', 'id', 'key']) ?? value;
+      if (result[type].some((option) => option.slug === slug || option.value === value)) continue;
+      result[type].push({
+        type,
+        value,
+        slug,
+        count: pickNumber(entry, ['count', 'total', 'n']) ?? 0,
+      });
     }
   }
 
@@ -205,15 +256,16 @@ export async function fetchFacets(): Promise<Facets> {
 
 export async function fetchBrowse(
   filters: BrowseFilters,
-  page: number,
+  offset: number,
   pageSize = 40
 ): Promise<BrowsePage> {
   const payload = await getJson<any>('/api/browse', {
     subject: filters.subject,
     author: filters.author,
     language: filters.language,
-    file_type: filters.kind,
-    page,
+    type: filters.kind,
+    q: filters.q,
+    offset,
     limit: pageSize,
   });
 
@@ -228,10 +280,10 @@ export async function fetchBrowse(
     typeof payload?.hasMore === 'boolean'
       ? payload.hasMore
       : total !== undefined
-        ? page * pageSize < total
+        ? offset + items.length < total
         : items.length === pageSize;
 
-  return { items, page, hasMore, total };
+  return { items, offset, hasMore, total };
 }
 
 export async function fetchWork(slug: string): Promise<Work> {

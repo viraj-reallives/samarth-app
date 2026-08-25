@@ -11,19 +11,21 @@ export function useFacets() {
   });
 }
 
-export function useBrowse(filters: BrowseFilters) {
+export function useBrowse(filters: BrowseFilters, enabled = true) {
   return useInfiniteQuery({
     queryKey: ['browse', filters],
     queryFn: ({ pageParam }) => fetchBrowse(filters, pageParam, PAGE_SIZE),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.offset + lastPage.items.length : undefined,
     staleTime: 1000 * 60 * 30,
+    enabled,
   });
 }
 
 export function useWork(slug?: string) {
   return useQuery({
-    queryKey: ['work', slug],
+    queryKey: ['work', slug, 'facets'],
     queryFn: () => fetchWork(slug as string),
     enabled: Boolean(slug),
     staleTime: 1000 * 60 * 60,

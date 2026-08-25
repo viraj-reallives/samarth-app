@@ -2,13 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrowseFilters, FacetType, Facets, WorkKind } from '../api/client';
-import { colors, kindLabel, radius, space, type } from '../theme';
-
-const SECTION_LABEL: Record<FacetType, string> = {
-  subject: 'विषय',
-  author: 'लेखक',
-  language: 'भाषा',
-};
+import { kindKey, useT } from '../i18n';
+import { colors, radius, space, type } from '../theme';
 
 type Props = {
   visible: boolean;
@@ -36,7 +31,7 @@ function Chip({
       accessibilityState={{ selected: active }}
       style={[styles.chip, active && styles.chipActive]}
     >
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+      <Text style={[type.meta, styles.chipText, active && styles.chipTextActive]}>
         {label}
         {count ? `  ${count}` : ''}
       </Text>
@@ -45,6 +40,8 @@ function Chip({
 }
 
 export default function FilterSheet({ visible, facets, filters, onChange, onClose }: Props) {
+  const t = useT();
+
   const toggle = (key: FacetType, value: string) =>
     onChange({ ...filters, [key]: filters[key] === value ? undefined : value });
 
@@ -55,19 +52,19 @@ export default function FilterSheet({ visible, facets, filters, onChange, onClos
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
       <SafeAreaView style={styles.sheet} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <Text style={type.screenTitle}>शोध मर्यादित करा</Text>
-          <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="बंद करा">
+          <Text style={type.screenTitle}>{t('filter.title')}</Text>
+          <Pressable onPress={onClose} hitSlop={12} accessibilityLabel={t('filter.close')}>
             <Feather name="x" size={22} color={colors.ink} />
           </Pressable>
         </View>
 
         <ScrollView contentContainerStyle={styles.body}>
-          <Text style={type.eyebrow}>प्रकार</Text>
+          <Text style={type.eyebrow}>{t('filter.kind')}</Text>
           <View style={styles.chips}>
             {(['pdf', 'audio'] as WorkKind[]).map((kind) => (
               <Chip
                 key={kind}
-                label={kindLabel[kind]}
+                label={t(kindKey(kind))}
                 active={filters.kind === kind}
                 onPress={() => toggleKind(kind)}
               />
@@ -79,15 +76,15 @@ export default function FilterSheet({ visible, facets, filters, onChange, onClos
             if (options.length === 0) return null;
             return (
               <View key={section}>
-                <Text style={[type.eyebrow, styles.sectionLabel]}>{SECTION_LABEL[section]}</Text>
+                <Text style={[type.eyebrow, styles.sectionLabel]}>{t(`filter.${section}`)}</Text>
                 <View style={styles.chips}>
                   {options.map((option) => (
                     <Chip
                       key={option.value}
                       label={option.value}
                       count={option.count}
-                      active={filters[section] === option.value}
-                      onPress={() => toggle(section, option.value)}
+                      active={filters[section] === option.slug}
+                      onPress={() => toggle(section, option.slug)}
                     />
                   ))}
                 </View>
@@ -98,10 +95,10 @@ export default function FilterSheet({ visible, facets, filters, onChange, onClos
 
         <View style={styles.footer}>
           <Pressable onPress={() => onChange({})} style={styles.clear} accessibilityRole="button">
-            <Text style={[type.button, { color: colors.inkSoft }]}>सर्व काढा</Text>
+            <Text style={[type.button, { color: colors.inkSoft }]}>{t('filter.clear')}</Text>
           </Pressable>
           <Pressable onPress={onClose} style={styles.apply} accessibilityRole="button">
-            <Text style={[type.button, { color: colors.card }]}>पाहा</Text>
+            <Text style={[type.button, { color: colors.card }]}>{t('filter.apply')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -115,10 +112,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: space.lg,
+    paddingHorizontal: space.xl,
+    paddingTop: space.lg,
     paddingBottom: space.md,
   },
-  body: { paddingHorizontal: space.lg, paddingBottom: space.xl },
+  body: { paddingHorizontal: space.xl, paddingBottom: space.xl },
   sectionLabel: { marginTop: space.lg },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
   chip: {
@@ -130,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   chipActive: { borderColor: colors.saffron, backgroundColor: colors.saffronWash },
-  chipText: { ...type.meta, color: colors.ink },
+  chipText: { color: colors.ink },
   chipTextActive: { color: colors.saffron },
   footer: {
     flexDirection: 'row',
