@@ -10,19 +10,11 @@
     "backgroundColor": "#FBF6EC",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "in.samarthramdas400.app",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "bundleIdentifier": "in.samarthramdas400.app"
     },
     "android": {
       "package": "in.samarthramdas400.app",
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-      ]
+      "edgeToEdgeEnabled": true
     },
     "plugins": [
       "expo-router",
@@ -38,12 +30,6 @@
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "60ba9bee-ba3a-4730-8ed5-b647786172d7"
-      }
     }
   }
 }
