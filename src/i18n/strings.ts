@@ -105,6 +105,11 @@ const mr = {
   'about.sitePromo':
     'समर्थ रामदासांचे अधिक साहित्य, बातम्या आणि माहितीसाठी आमचे संकेतस्थळ अवश्य भेट द्या.',
   'about.openSite': 'संकेतस्थळ पहा',
+  'about.shareApp': 'हे ॲप शेअर करा',
+  'about.shareAppShort': 'शेअर करा',
+  'about.shareAppHint': 'कुटुंबियांकडे व मित्रांना हा दुवा पाठवा.',
+  'about.shareAppMessage':
+    'श्री समर्थ रामदासांचे साहित्य एकाच ठिकाणी वाचा व ऐका. मोफत, जाहिरातीशिवाय.',
   'about.privacy': 'गोपनीयता धोरण',
   'about.language': 'ॲपची भाषा',
   'about.languageHint': 'यामुळे साहित्याची भाषा बदलत नाही, फक्त ॲपमधील मजकूर बदलतो.',
@@ -228,6 +233,11 @@ const en: Partial<Record<keyof typeof mr, string>> = {
   'about.sitePromo':
     'Visit our website for more of Samarth Ramdas’s literature, news and information.',
   'about.openSite': 'Visit the website',
+  'about.shareApp': 'Share this app',
+  'about.shareAppShort': 'Share app',
+  'about.shareAppHint': 'Send the link to family and friends.',
+  'about.shareAppMessage':
+    'Read and listen to the literature of Shri Samarth Ramdas. Free, with no ads.',
   'about.privacy': 'Privacy policy',
   'about.language': 'App language',
   'about.languageHint': 'This changes the app text only, not the language of the works.',

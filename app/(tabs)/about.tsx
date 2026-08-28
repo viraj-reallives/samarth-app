@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ContactForm from '../../src/components/ContactForm';
 import LanguageToggle from '../../src/components/LanguageToggle';
 import ScreenHeader from '../../src/components/ScreenHeader';
+import ShareAppButton from '../../src/components/ShareAppButton';
 import { useLang, useT } from '../../src/i18n';
 import { SITE_LOGO } from '../../src/lib/brand';
 import {
@@ -80,6 +81,8 @@ export default function AboutScreen() {
                 <Text style={[type.body, styles.linkText]}>samarthramdas400.in</Text>
               </View>
             </Pressable>
+
+            <ShareAppButton variant="banner" />
 
             <Pressable
               style={styles.link}

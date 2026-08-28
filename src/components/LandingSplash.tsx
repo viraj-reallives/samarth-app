@@ -8,12 +8,16 @@ const FADE_MS = 400;
 const AUDIO_FALLBACK_MS = 4000;
 
 export default function LandingSplash({
+  active,
   canDismiss,
   onReady,
+  onImageReady,
   onFinished,
 }: {
+  active: boolean;
   canDismiss: boolean;
   onReady?: () => void;
+  onImageReady?: () => void;
   onFinished?: () => void;
 }) {
   const player = useAudioPlayer(LANDING_SOUND);
@@ -25,7 +29,7 @@ export default function LandingSplash({
   const [audioDone, setAudioDone] = useState(false);
 
   useEffect(() => {
-    if (started.current || !status.isLoaded) return;
+    if (!active || started.current || !status.isLoaded) return;
     started.current = true;
     void setAudioModeAsync({
       playsInSilentMode: true,
@@ -40,20 +44,21 @@ export default function LandingSplash({
           setAudioDone(true);
         }
       });
-  }, [status.isLoaded, player]);
+  }, [active, status.isLoaded, player]);
 
   useEffect(() => {
     if (status.didJustFinish || status.error) setAudioDone(true);
   }, [status.didJustFinish, status.error]);
 
   useEffect(() => {
+    if (!active) return;
     const hold = setTimeout(() => setHeld(true), HOLD_MS);
     const fallback = setTimeout(() => setAudioDone(true), AUDIO_FALLBACK_MS);
     return () => {
       clearTimeout(hold);
       clearTimeout(fallback);
     };
-  }, []);
+  }, [active]);
 
   useEffect(() => {
     if (!held || !audioDone || !canDismiss || fading.current) return;
@@ -77,7 +82,10 @@ export default function LandingSplash({
         source={LANDING_IMAGE}
         style={styles.image}
         resizeMode="cover"
-        onLoad={onReady}
+        onLoad={() => {
+          onImageReady?.();
+          onReady?.();
+        }}
         accessibilityIgnoresInvertColors
       />
     </Animated.View>

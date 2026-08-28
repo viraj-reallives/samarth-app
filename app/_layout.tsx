@@ -13,8 +13,8 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { setAudioModeAsync } from 'expo-audio';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LandingSplash from '../src/components/LandingSplash';
 import { hydrateLang } from '../src/i18n';
@@ -23,12 +23,15 @@ import { hydratePlayback } from '../src/lib/playback';
 import { colors } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 400, fade: true });
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 2, refetchOnWindowFocus: false },
   },
 });
+
+const SKY = '#4A8BC2';
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -44,6 +47,11 @@ export default function RootLayout() {
   });
   const [langReady, setLangReady] = useState(false);
   const [landingDone, setLandingDone] = useState(false);
+  // iOS native splash is already the full painting, so the landing can start at once.
+  // Android: wait until the OS splash is gone and the painting is on screen.
+  const [nativeGone, setNativeGone] = useState(Platform.OS !== 'android');
+  const [imageReady, setImageReady] = useState(Platform.OS !== 'android');
+  const hidingNative = useRef(false);
 
   // One audio session for the whole app. doNotMix is required for lock screen controls.
   useEffect(() => {
@@ -61,7 +69,18 @@ export default function RootLayout() {
   }, []);
 
   const hideNativeSplash = useCallback(() => {
-    SplashScreen.hideAsync().catch(() => {});
+    if (hidingNative.current) return;
+    hidingNative.current = true;
+    SplashScreen.hideAsync()
+      .catch(() => {})
+      .finally(() => {
+        if (Platform.OS !== 'android') {
+          setNativeGone(true);
+          return;
+        }
+        // Android 12+ still plays a short icon animation; ours is the same sky blue.
+        setTimeout(() => setNativeGone(true), 100);
+      });
   }, []);
 
   const finishLanding = useCallback(() => {
@@ -69,9 +88,19 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    if (Platform.OS === 'android') hideNativeSplash();
     const fallback = setTimeout(hideNativeSplash, 800);
     return () => clearTimeout(fallback);
   }, [hideNativeSplash]);
+
+  useEffect(() => {
+    if (nativeGone && imageReady) return;
+    const stuck = setTimeout(() => {
+      setNativeGone(true);
+      setImageReady(true);
+    }, 2500);
+    return () => clearTimeout(stuck);
+  }, [nativeGone, imageReady]);
 
   const resourcesReady = Boolean((fontsLoaded || fontError) && langReady);
 
@@ -79,7 +108,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar style={landingDone ? 'dark' : 'light'} />
-        <View style={{ flex: 1, backgroundColor: colors.paper }}>
+        <View style={{ flex: 1, backgroundColor: landingDone ? colors.paper : SKY }}>
           {resourcesReady ? (
             <Stack
               screenOptions={{
@@ -93,8 +122,10 @@ export default function RootLayout() {
           ) : null}
           {!landingDone ? (
             <LandingSplash
+              active={nativeGone && imageReady}
               canDismiss={resourcesReady}
               onReady={hideNativeSplash}
+              onImageReady={() => setImageReady(true)}
               onFinished={finishLanding}
             />
           ) : null}

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "श्री समर्थ रामदास",
+    "name": "Shri Samarth Ramdas",
     "slug": "samarth-ramdas-400",
     "scheme": "samarthramdas",
     "version": "1.0.0",
@@ -19,23 +19,33 @@
       "url": "https://u.expo.dev/60ba9bee-ba3a-4730-8ed5-b647786172d7"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "in.samarthramdas400.app",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "CFBundleDisplayName": "श्री समर्थ रामदास"
+        "CFBundleDisplayName": "Samarth Ramdas"
       }
     },
     "android": {
       "package": "in.samarthramdas400.app",
-      "versionCode": 1,
-      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "icon": "./assets/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4A8BC2"
+      },
       "permissions": [
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.CAMERA"
       ]
     },
     "plugins": [
@@ -43,10 +53,28 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FBF6EC",
-          "image": "./assets/icon.png",
-          "imageWidth": 220,
-          "resizeMode": "contain"
+          "backgroundColor": "#4A8BC2",
+          "image": "./assets/landing-image.png",
+          "resizeMode": "cover",
+          "enableFullScreenImage_legacy": true,
+          "ios": {
+            "backgroundColor": "#4A8BC2",
+            "image": "./assets/landing-image.png",
+            "resizeMode": "cover",
+            "enableFullScreenImage_legacy": true
+          },
+          "android": {
+            "backgroundColor": "#4A8BC2",
+            "image": "./assets/splash-android.png",
+            "imageWidth": 288,
+            "resizeMode": "contain"
+          }
+        }
+      ],
+      [
+        "./plugins/withAndroidLaunchBackground",
+        {
+          "image": "./assets/landing-image.png"
         }
       ],
       [

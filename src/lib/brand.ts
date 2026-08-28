@@ -1,15 +1,49 @@
 import { ImageSourcePropType } from 'react-native';
 import { FacetType } from '../api/client';
+import { Lang } from '../i18n/strings';
 
 export const SITE_LOGO = require('../../assets/brand/logo-main.jpeg') as ImageSourcePropType;
 export const LANDING_IMAGE = require('../../assets/landing-image.png') as ImageSourcePropType;
 export const LANDING_SOUND = require('../../assets/landing-sound.mp3');
 
-export const PATH_CARD_IMAGES: Record<FacetType, ImageSourcePropType> = {
-  subject: require('../../assets/brand/cards/subject.jpg'),
-  author: require('../../assets/brand/cards/author.jpg'),
-  language: require('../../assets/brand/cards/language.jpg'),
+export const PATH_CARDS: Record<
+  FacetType,
+  {
+    image: Record<Lang, ImageSourcePropType>;
+    art: readonly [string, string, string];
+    artMid: number;
+  }
+> = {
+  subject: {
+    image: {
+      mr: require('../../assets/brand/cards/vishay.png'),
+      en: require('../../assets/brand/cards/topic.png'),
+    },
+    art: ['#ead28a', '#c4922a', '#6e4a10'],
+    artMid: 0.48,
+  },
+  author: {
+    image: {
+      mr: require('../../assets/brand/cards/lekhak.png'),
+      en: require('../../assets/brand/cards/author.png'),
+    },
+    art: ['#e8b87a', '#a43c24', '#5c1a16'],
+    artMid: 0.52,
+  },
+  language: {
+    image: {
+      mr: require('../../assets/brand/cards/bhasha.png'),
+      en: require('../../assets/brand/cards/language.png'),
+    },
+    art: ['#7ed4c8', '#0f766e', '#134e4a'],
+    artMid: 0.5,
+  },
 };
+
+export function pathCardGradient(facet: FacetType) {
+  const { art, artMid } = PATH_CARDS[facet];
+  return `linear-gradient(165deg, ${art[0]} 0%, ${art[1]} ${Math.round(artMid * 100)}%, ${art[2]} 100%)`;
+}
 
 const PORTRAITS: Record<string, ImageSourcePropType> = {
   sushamatai: require('../../assets/brand/authors/sushamatai.jpg'),

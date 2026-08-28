@@ -8,11 +8,12 @@ import BrandLoader from '../../../src/components/BrandLoader';
 import LanguageMenu from '../../../src/components/LanguageMenu';
 import PathCard from '../../../src/components/PathCard';
 import ScreenHeader from '../../../src/components/ScreenHeader';
+import ShareAppButton from '../../../src/components/ShareAppButton';
 import SearchBar from '../../../src/components/SearchBar';
 import WorkList from '../../../src/components/WorkList';
-import { useT } from '../../../src/i18n';
+import { useT, useLang } from '../../../src/i18n';
 import { StringKey } from '../../../src/i18n/strings';
-import { PATH_CARD_IMAGES } from '../../../src/lib/brand';
+import { PATH_CARDS, pathCardGradient } from '../../../src/lib/brand';
 import { useDebounced } from '../../../src/lib/useDebounced';
 import { colors, radius, space, type } from '../../../src/theme';
 
@@ -24,6 +25,7 @@ const PATHS: { facet: FacetType; title: StringKey }[] = [
 
 export default function LibraryHome() {
   const t = useT();
+  const lang = useLang();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const debounced = useDebounced(query.trim());
@@ -46,7 +48,12 @@ export default function LibraryHome() {
         <ScreenHeader
           title={t('tab.browse')}
           subtitle={t('browse.subtitle')}
-          right={<LanguageMenu />}
+          right={
+            <View style={styles.headerActions}>
+              <ShareAppButton variant="compact" />
+              <LanguageMenu />
+            </View>
+          }
         />
       </View>
       <SearchBar value={query} onChangeText={setQuery} placeholder={t('browse.search')} />
@@ -70,7 +77,9 @@ export default function LibraryHome() {
                 key={path.facet}
                 title={t(path.title)}
                 hint={hints[path.facet]}
-                image={PATH_CARD_IMAGES[path.facet]}
+                image={PATH_CARDS[path.facet].image[lang]}
+                art={PATH_CARDS[path.facet].art}
+                artGradient={pathCardGradient(path.facet)}
                 onPress={() =>
                   router.push({ pathname: '/browse/[facet]', params: { facet: path.facet } })
                 }
@@ -107,6 +116,7 @@ export default function LibraryHome() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   header: { zIndex: 20, elevation: 8 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 0 },
   scroll: { flex: 1 },
   body: { paddingHorizontal: space.xl, paddingBottom: space.xxl },
   section: { marginBottom: space.md },

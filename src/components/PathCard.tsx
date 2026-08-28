@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageSourcePropType, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLang } from '../i18n';
 import { colors, radius, space, type } from '../theme';
 
@@ -7,11 +7,15 @@ export default function PathCard({
   title,
   hint,
   image,
+  art,
+  artGradient,
   onPress,
 }: {
   title: string;
   hint?: string;
   image: ImageSourcePropType;
+  art: readonly [string, string, string];
+  artGradient: string;
   onPress: () => void;
 }) {
   useLang();
@@ -22,7 +26,17 @@ export default function PathCard({
       accessibilityLabel={title}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <Image source={image} style={styles.image} resizeMode="cover" />
+      <View
+        style={[
+          styles.art,
+          { backgroundColor: art[1] },
+          Platform.OS === 'web'
+            ? { backgroundImage: artGradient }
+            : { experimental_backgroundImage: artGradient },
+        ]}
+      >
+        <Image source={image} style={styles.image} resizeMode="contain" />
+      </View>
       <View style={styles.row}>
         <View style={styles.body}>
           <Text style={[type.workTitle, styles.title]}>{title}</Text>
@@ -52,7 +66,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   pressed: { opacity: 0.92 },
-  image: { width: '100%', height: 108, backgroundColor: colors.saffronWash },
+  art: {
+    height: 132,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: { width: '100%', height: '100%' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
